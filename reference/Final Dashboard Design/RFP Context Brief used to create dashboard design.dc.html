@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="stylesheet" href="_ds/broadsheet-73add4dc-8931-45b5-ab05-6361dd5b68fc/styles.css">
+  <script src="_ds/broadsheet-73add4dc-8931-45b5-ab05-6361dd5b68fc/_ds_bundle.js"></script>
+  <script src="./doc-page.js"></script>
+  <style>
+    doc-page:not(:defined){visibility:hidden}
+    body { background: var(--color-bg); }
+    .brief h1, .brief h2, .brief h3 { font-family: var(--font-heading); color: var(--color-text); }
+    .brief p, .brief li, .brief td, .brief th { font-family: var(--font-body); color: var(--color-text); }
+    .brief table { width: 100%; border-collapse: collapse; margin: var(--space-4) 0; }
+    .brief th { text-align: left; font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--color-neutral-700); border-bottom: 2px solid var(--color-text); padding: var(--space-2) var(--space-3) var(--space-2) 0; }
+    .brief td { border-bottom: 1px solid var(--color-neutral-300); padding: var(--space-3) var(--space-3) var(--space-3) 0; vertical-align: top; font-size: 0.95rem; line-height: 1.5; }
+    .brief .kicker { text-transform: uppercase; letter-spacing: 0.08em; font-size: 0.75rem; color: var(--color-accent-700); font-weight: 600; margin-bottom: var(--space-1); }
+    .brief blockquote { font-style: italic; font-size: 1.15rem; border: none; margin: var(--space-5) 0; padding-left: var(--space-4); border-left: 3px solid var(--color-accent-2); color: var(--color-neutral-800); }
+    .brief .status-open { color: var(--color-accent-2-700); font-weight: 600; }
+    .brief .status-confirmed { color: var(--color-accent-700); font-weight: 600; }
+    .brief .status-stub { color: var(--color-neutral-700); font-style: italic; }
+    .brief code { font-family: var(--font-body); background: var(--color-neutral-200); padding: 0.1em 0.4em; border-radius: var(--radius-sm); font-size: 0.9em; }
+    .brief hr { border: none; border-top: 1px solid var(--color-neutral-300); margin: var(--space-6) 0; }
+  </style>
+</helmet>
+
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#123A6B"/><text x="20" y="60" font-family="sans-serif" font-size="20" font-weight="800" fill="#fff">CONTEXT</text><text x="20" y="90" font-family="sans-serif" font-size="20" font-weight="800" fill="#fff">BRIEF</text></svg></template>
+<doc-page margin="0.9in" class="brief">
+
+<div class="kicker">Mars Global RFP &mdash; PLM Reporting &amp; Analytics MVP &mdash; AS-BUILT</div>
+<h1>Context Brief (Updated: As-Built)</h1>
+<p>This updates the original working brief to reflect what was actually built in the Claude Design prototype (<code>Dashboard.dc.html</code>), for handoff to development. Sections 1&ndash;3 and 6&ndash;7 are unchanged history; Sections 4, 5, 8 and 9 are updated to as-built; Sections 10&ndash;13 are new.</p>
+
+<hr>
+
+<h2>1. The RFP, in brief</h2>
+<p>Mars is establishing SAP PLM (cPLM) as the central enterprise system for product and packaging data, replacing standard SAP reporting with a purpose-built suite. The ask spans <strong>all Mars segments</strong> &mdash; Petcare, Snacking, Food &mdash; not a single division.</p>
+<h3>Scope</h3>
+<ul>
+  <li>Design, build, and deploy <strong>4&ndash;5 interactive business reports</strong> (confirmed mix: 2 complex, 2 medium, 1 simple) plus a landing page, covering Ingredients, Recipes/Finished Goods, Packaging Specs, Printed Specs, and Document Info Records (DIR).</li>
+  <li>Engineer Bronze &rarr; Silver &rarr; Gold data layers, a governed semantic layer, and a consumption layer, all inside Mars' High Confidential (HC) zone.</li>
+  <li>Recommend and architect the platform; provide implementation cost, hypercare, and long-term support estimates; outline a 12&ndash;24 month AI roadmap.</li>
+</ul>
+<h3>Key tenets</h3>
+<ul>
+  <li>Clean, self-service reporting suite with a single landing page</li>
+  <li>Security via HC zone and role-based access control (RBAC)</li>
+  <li>High-scale concurrency, sub-30-second load SLA</li>
+  <li>Centralized semantic layer; optimized run and licensing costs</li>
+</ul>
+<blockquote>"A custom React application to handle complex, multi-level BOM explosions, enable highly interactive UX and meet performance SLAs without per-user licensing costs" &mdash; the platform choice argued in the solution deck, over native Power BI.</blockquote>
+
+<h2>2. Discovery</h2>
+<table>
+  <thead><tr><th style="width:22%">Topic</th><th>Answer</th></tr></thead>
+  <tbody>
+    <tr><td>Scope breadth</td><td>Cross-segment (X-segment), not Petcare-only. All reports are interactive, not display-only.</td></tr>
+    <tr><td>Report complexity mix</td><td>2 complex, 2 medium, 1 simple, across the 4&ndash;5 reports + landing page.</td></tr>
+    <tr><td>"Non-parent-child" relationships</td><td>Packaging specs &harr; printed specs (linked by inheritance), transport specs, pallet instructions (PI), and DIR (technical drawings/documents) linked via the spec's document tab.</td></tr>
+    <tr><td>Traceability span</td><td>Start: ingredient specs. End: highest level of the finished-good hierarchy. In between: recipes, semi-finished goods, packaging, printed/artwork, intermediate FG levels.</td></tr>
+    <tr><td>Where-used / explosion logic</td><td>BOMs exist in the data lake, but where-used logic does <strong>not</strong> exist yet &mdash; building the recursive explosion/where-used logic is in the vendor's scope.</td></tr>
+    <tr><td>Data readiness</td><td>Source data is ingested (Bronze); Silver, Gold, and semantic layers are the vendor's scope. Unity Catalog is already enabled.</td></tr>
+    <tr><td>HC zone constraints</td><td>All development stays inside the HC zone; HC data cannot be imported or cached outside Databricks.</td></tr>
+    <tr><td>Performance / usage</td><td>~50 daily accesses expected; 30s max load time; hourly data refresh.</td></tr>
+    <tr><td>AI in Phase 1</td><td>No AI-generated narratives or natural-language query in Phase 1 &mdash; roadmap items only, pending GenAI governance approval for HC-zone data.</td></tr>
+    <tr><td>Landing page</td><td>Explicitly in scope, no platform preference stated.</td></tr>
+    <tr><td>Data retention</td><td>Active objects stay visible indefinitely (some ingredient specs are 20+ years old); inactive objects get a 2-year minimum retention.</td></tr>
+  </tbody>
+</table>
+
+<h2>3. Proposed solution architecture</h2>
+<p>Three pillars: a <strong>custom React web app</strong> (chosen over native Power BI to render non-parent-child BOM structures without visual/licensing constraints), a <strong>medallion data architecture</strong> in Databricks Unity Catalog (Bronze/Silver/Gold/Semantic, entirely within the HC zone), and a phased <strong>AI roadmap</strong> (0&ndash;6mo MVP &rarr; 6&ndash;9mo automated data-health &amp; anomaly detection &rarr; 9&ndash;12mo+ conversational spec exploration, contingent on GenAI governance approval).</p>
+<p>Delivery: an 18&ndash;19 week phased timeline (design/data architecture &rarr; core solutioning &rarr; UAT &rarr; productionization &rarr; 2-week hypercare), handing off to a continuous "Core &amp; Flex" DevOps pod.</p>
+<p>Credibility anchor: Tiger previously built <strong>FRAD</strong> (Formulation Reporting &amp; Analytics Database) for Mars pet-nutrition R&amp;D on the same SAP PLM/MDG data model &mdash; ingredients, recipes, BOM hierarchies, where-used/explosion, nutrient compliance &mdash; which is the direct precedent for this MVP.</p>
+
+<h2>4. The five reports &mdash; as built</h2>
+<table>
+  <thead><tr><th style="width:22%">Report</th><th>As built</th></tr></thead>
+  <tbody>
+    <tr><td>PLM Hub</td><td>Live segment/region multiselect dropdown filters (with Apply/Cancel, not instant toggles) driving 5 KPI cards (Total Specs, Active, Phased Out, Segments in View, Regions in View); actionable alerts filtered by segment; Active-vs-Phased-Out health bars per segment; 4 report tiles; recent/pinned views table.</td></tr>
+    <tr><td>Specification Explorer</td><td>Query Builder (free text, material type/region/segment/status checkboxes) gated behind an Execute Query button; 40-row synthetic catalog; results table with select checkboxes, status/type badges, masked cost &amp; formulation columns, and a per-row &#8942; menu (Explode BOM, Analyze Blast Radius, Add to Compare); floating "Compare Selected" action once 2+ rows are checked.</td></tr>
+    <tr><td>Top-Down Traceability</td><td>Root-spec dropdown (all FERT items); 4 KPI tiles (Total Nodes, Raw Materials, Packaging &amp; Print, Recipes &amp; Sub-Recipes); expand/collapse composition table with indentation, Level % and Level (Kg); slide-in detail panel (metadata, masked cost/formulation, allergens, linked docs) on row click. Full BOM trees exist for the 7 hero-chain roots only.</td></tr>
+    <tr><td>Bottom-Up Impact</td><td>Source-material dropdown (any non-finished-good node across the hero trees); 3 KPI tiles (Impacted Finished Goods, Impacted Master Recipes, Distinct Plants Affected); Detailed Impact Paths table (region, site, master recipe, finished good, level %, level kg, masked cost). Shared raw-material IDs across regional trees (e.g. wheat in all 3 Pedigree variants) drive multi-region blast radius.</td></tr>
+    <tr><td>Compare Specs</td><td>Reads the selection carried from Explorer; below 2 selections shows a prompt back to Explorer. 4 tabs: Attributes (Status, Region, Segment, Type, Plant, masked Cost/Kg, masked Formulation %, Allergens &mdash; cross-type, always populated), BOM Composition (per-target top-level component list, only for hero FERT/recipe nodes), Packaging Data and Printed Spec Data (populated only when a target is that type). Highlight Differences toggle hides matching rows.</td></tr>
+  </tbody>
+</table>
+
+<h2>5. Build status vs. the AI Studio baseline</h2>
+<p>All 5 screens reached full functional parity with Anantha's AI Studio build and then went further &mdash; deeper synthetic data, a third persona, live Hub filters, dropdown+Apply query patterns, and real (not simulated) recursive traversal for Traceability/Impact/Compare. Nothing from the original baseline was dropped.</p>
+
+<h2>6. Transcript-derived asks (history)</h2>
+<table>
+  <thead><tr><th style="width:28%">Ask</th><th>Resolution</th></tr></thead>
+  <tbody>
+    <tr><td>Explorer should retain the user's previous selection/filter state</td><td>Built &mdash; see Section 9</td></tr>
+    <tr><td>Compare must work across multiple material types while filtering consistently</td><td>Built &mdash; see Section 4, Compare Specs</td></tr>
+    <tr><td>Synthetic data needs to simulate a real product explosion (30&ndash;40 materials), not 3&ndash;4 mock rows</td><td>Built &mdash; see Section 8 (exceeded: ~50 line items across 3 hero chains)</td></tr>
+    <tr><td>Build in React, not Power BI, for hierarchical-data scalability</td><td>Deck's platform decision; unaffected by this HTML prototype</td></tr>
+  </tbody>
+</table>
+
+<h2>7. Decisions confirmed during the build</h2>
+<table>
+  <thead><tr><th style="width:26%">Decision</th><th>Resolution</th></tr></thead>
+  <tbody>
+    <tr><td>Compare cross-type behavior</td><td><span class="status-confirmed">Built</span> &mdash; shared fields always shown; BOM/Packaging/Printed tabs populate only for matching types.</td></tr>
+    <tr><td>Explorer state to persist</td><td><span class="status-confirmed">Built</span> &mdash; filters, selected rows, and last drill-in target all persist (see Section 9).</td></tr>
+    <tr><td>Hero deep-BOM products</td><td><span class="status-confirmed">Built, expanded</span> &mdash; 3 hero chains (one per segment), not just Petcare.</td></tr>
+    <tr><td>Persona / RBAC</td><td><span class="status-confirmed">Built</span> &mdash; 3 personas live in the header dropdown; masking matrix in Section 10.</td></tr>
+    <tr><td>Hub framing</td><td><span class="status-confirmed">Built</span> &mdash; live multiselect segment/region filters (dropdown + Apply/Cancel) driving the KPI strip.</td></tr>
+    <tr><td>Navigation structure</td><td><span class="status-confirmed">Built</span> &mdash; Hub and Explorer standalone; Traceability/Impact/Compare grouped under an "Analysis" label in the sidebar.</td></tr>
+    <tr><td>Theme</td><td><span class="status-confirmed">Built</span> &mdash; palette changed from the design system's red/cream to a blue enterprise theme (navy sidebar `#0B2A4A`, active blue `#1E6FD9`) by explicit client request, overriding the bound Petcare DS color tokens (spacing/type/radius tokens unchanged).</td></tr>
+  </tbody>
+</table>
+
+<h2>8. Synthetic data &mdash; as implemented</h2>
+<p>40 materials in <code>MATERIALS</code>, spanning FERT / REAL_SUB / SUB_RCP / ROH / VERP / PRNT, across Petcare/Snacking/Food and NA/EU/APAC/Global:</p>
+<ul>
+  <li><strong>Petcare hero:</strong> Pedigree Adult Dry Chicken &amp; Rice (15kg) &mdash; 3 regional FERT roots (US/EU/APAC), 1 master recipe, 1 vitamin/mineral sub-recipe, 4 raw materials, 3 packaging specs, 3 printed specs. 9 nodes per region tree.</li>
+  <li><strong>Snacking hero:</strong> M&amp;M's Milk Chocolate Sharing Pouch (250g) &mdash; 2 regional FERT roots (US/EU), 1 master recipe, 2 sub-recipes (shell, coating), 3 raw materials (cocoa, milk powder, sugar), packaging + print per region. 9 nodes per region tree.</li>
+  <li><strong>Food hero:</strong> Ben's Original Express Rice (250g) &mdash; 2 regional FERT roots (EU/APAC), 1 master recipe, 1 seasoning sub-recipe, 2 raw materials (rice, spice blend), packaging + print per region. 7 nodes per region tree.</li>
+  <li><strong>Catalog breadth:</strong> 5 additional standalone FERT items (Whiskas, Dove, Uncle Ben's, Cesar, Snickers) with no modeled BOM &mdash; populate Explorer/Hub counts and Compare's Attributes tab, but are not explodable in Traceability/Impact.</li>
+  <li><strong>Segment-level counts</strong> for the Hub KPI strip (Total/Active/Phased Out per segment &times; region) are separate aggregate numbers, not derived from the 40-row catalog &mdash; they simulate the full portfolio (hundreds of specs) the catalog is a detailed sample of.</li>
+  <li><strong>Masking:</strong> R&amp;D Scientist &mdash; full access. General Associate &mdash; cost/kg and formulation % masked (shown as "&ndash;"). Finance &amp; Business &mdash; formulation %/allergens masked, cost/kg and cost roll-ups visible.</li>
+</ul>
+
+<h2>9. Explorer state persistence &mdash; as implemented</h2>
+<p>Because the whole app is one continuously-mounted component, filter selections, checked rows, and the last drill-in target live in component state and are <strong>not reset</strong> when navigating to Traceability/Impact/Compare and back:</p>
+<ul>
+  <li><strong>Filters:</strong> free text, material types, regions, segments, status &mdash; both the pending (unapplied) and applied filter sets survive.</li>
+  <li><strong>Selected rows:</strong> the checkbox selection used for Compare persists until manually cleared.</li>
+  <li><strong>Last drill target:</strong> clicking a spec ID, "Explode BOM", or "Analyze Blast Radius" stores that spec's ID and is used to default the Traceability root / Impact source picker on arrival.</li>
+</ul>
+
+<h2>10. Persona / RBAC &mdash; as implemented</h2>
+<table>
+  <thead><tr><th style="width:22%">Persona</th><th>Cost / Kg</th><th>Formulation % &amp; Allergens</th></tr></thead>
+  <tbody>
+    <tr><td>R&amp;D Scientist</td><td>Visible</td><td>Visible</td></tr>
+    <tr><td>General Associate</td><td>Masked ("&ndash;")</td><td>Masked ("&ndash;")</td></tr>
+    <tr><td>Finance &amp; Business</td><td>Visible</td><td>Masked ("&ndash;")</td></tr>
+  </tbody>
+</table>
+<p>The Role dropdown lives in the top header and applies instantly across Explorer, Traceability, Impact, and Compare. This is a client-side display mask on top of a single shared dataset &mdash; it is <strong>not</strong> a real authorization boundary. A production build needs server-side field-level authorization (see Section 13).</p>
+
+<h2>11. Navigation &amp; Hub KPI strip &mdash; as implemented</h2>
+<ul>
+  <li><strong>Sidebar:</strong> Mars PLM logo, PLM Hub, Specification Explorer, then an "Analysis" label over Top-Down Traceability / Bottom-Up Impact / Compare Specs. Active item highlighted.</li>
+  <li><strong>Header:</strong> global search input (visual only, not wired &mdash; see Section 13), Role dropdown.</li>
+  <li><strong>Hub KPI strip:</strong> Segment and Region are separate dropdown buttons, each opening a checkbox multiselect panel with its own Apply/Cancel &mdash; selections only take effect on Apply. The 5 KPI cards and the alerts list recompute from the applied selection; the Portfolio Health Trend chart is unfiltered (whole-portfolio view) by design.</li>
+  <li><strong>Layout:</strong> fixed-height single-frame shell (sidebar + header don't scroll); only the main content area scrolls vertically. No horizontal scroll anywhere.</li>
+</ul>
+
+<h2>12. Stubbed vs. fully interactive</h2>
+<table>
+  <thead><tr><th style="width:30%">Area</th><th>Status</th></tr></thead>
+  <tbody>
+    <tr><td>Hub filters, KPI strip, alerts, health bars, report tiles, recent views</td><td><span class="status-confirmed">Fully interactive</span></td></tr>
+    <tr><td>Explorer query builder, results, row actions, compare selection</td><td><span class="status-confirmed">Fully interactive</span></td></tr>
+    <tr><td>Traceability explosion, Impact traversal, Compare diff</td><td><span class="status-confirmed">Fully interactive</span> for the 7 hero-chain roots and their descendants</td></tr>
+    <tr><td>Traceability/Impact for the 5 catalog-breadth FERTs (no BOM modeled)</td><td><span class="status-stub">Stub</span> &mdash; shows an empty/no-data state, not an error</td></tr>
+    <tr><td>Global header search bar</td><td><span class="status-stub">Stub</span> &mdash; visual only, not wired to any results</td></tr>
+    <tr><td>Notification bell</td><td><span class="status-stub">Stub</span> &mdash; visual only</td></tr>
+    <tr><td>"View Full Portfolio" link (Hub) and row ID links (Recent Views)</td><td><span class="status-stub">Stub</span> &mdash; placeholder hrefs, no destination</td></tr>
+    <tr><td>Persona masking</td><td><span class="status-confirmed">Fully interactive</span> as a client-side display rule (not real server-side authorization)</td></tr>
+  </tbody>
+</table>
+
+<h2>13. Open items / gaps for the developer</h2>
+<ul>
+  <li><strong>Search bar:</strong> not wired to any index or results view &mdash; needs a defined behavior (jump to Explorer with the term pre-filled? live results dropdown?).</li>
+  <li><strong>Data scale mismatch:</strong> the Hub's segment/region KPI counts (hundreds of specs) are independent illustrative numbers, not aggregated from the 40-row Explorer catalog. A real build needs one consistent dataset (or an explicit rule for how "sample" vs "full portfolio" numbers relate).</li>
+  <li><strong>RBAC is display-only:</strong> masking must be re-implemented as real server-side field authorization in production &mdash; the prototype's client-side mask is a UX reference only, not a security model.</li>
+  <li><strong>BOM coverage:</strong> only 7 FERT roots (the 3 hero chains) have modeled BOM/impact data; a real build needs this sourced from actual PLM/MDG BOM tables for every material, not hand-authored trees.</li>
+  <li><strong>Compare BOM tab depth:</strong> currently shows only each target's immediate children, not a full recursive diff of nested sub-recipes &mdash; confirm whether production needs deeper BOM diffing.</li>
+  <li><strong>Notification bell and "View Full Portfolio"/row-link destinations:</strong> undefined &mdash; need target screens or removal.</li>
+</ul>
+
+</doc-page>
+
+</x-dc>
+</body>
+</html>
