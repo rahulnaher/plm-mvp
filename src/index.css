@@ -1,0 +1,130 @@
+@import "tailwindcss";
+
+/*
+ * Design tokens sourced from reference/Claude Code Handoff Package/Dashboard-Final-Design.html.
+ *
+ * IMPORTANT: the reference design's CSS custom properties are still literally
+ * named `--red-900` / `--red-800` / `--red-600` even though the client's
+ * "blue enterprise" override replaces their values with navy/blue
+ * (#0B2A4A / #123A6B / #1E6FD9). We do NOT carry the misleading `--red-*`
+ * names forward — every token below is named for what it actually is.
+ *
+ * Declaring these under `@theme` makes them first-class Tailwind utilities
+ * (e.g. `--color-navy-900` -> `bg-navy-900`, `text-navy-900`, ...).
+ */
+@theme {
+  /* Font families (Mulish in the reference; system-stack fallback here —
+     no webfont asset shipped with this scaffold). */
+  --font-display: 'Mulish', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-body: 'Mulish', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --font-label: 'Mulish', system-ui, -apple-system, 'Segoe UI', sans-serif;
+
+  /* Brand palette — navy/blue enterprise override (client-requested,
+     replaces the base design system's red-led palette). */
+  --color-navy-900: #0b2a4a;
+  --color-navy-800: #123a6b;
+  --color-blue-600: #1e6fd9;
+  --color-blue-500: #2f80ed;
+  --color-sky-400: #5fa8f5;
+  --color-sky-200: #d6e9fe;
+  --color-blue-100: #e8f1fd;
+  --color-blue-50: #f1f7fe;
+  --color-teal-600: #0e8fa8;
+  --color-teal-100: #dcf2f6;
+
+  --color-canvas-50: #f4f7fb;
+  --color-canvas-100: #eaf1fa;
+  --color-canvas-200: #dce8f5;
+  --color-white: #ffffff;
+
+  --color-ink-900: #2a2622;
+  --color-ink-700: #3c3c3c;
+  --color-ink-500: #736e6e;
+  --color-ink-400: #9a9492;
+  --color-ink-300: #c4beba;
+  --color-ink-200: #e4ddd5;
+  --color-ink-100: #f0ebe3;
+
+  /*
+   * Semantic aliases consumed by components. Named so the generated
+   * Tailwind utility reads cleanly (`--color-hairline` -> `border-hairline`,
+   * not `--color-border-hairline` -> `border-border-hairline`).
+   */
+  --color-canvas: var(--color-canvas-50); /* page background */
+  --color-surface: var(--color-white); /* card / header background */
+  --color-panel: var(--color-navy-800); /* dark structural panel (e.g. active nav item) */
+  --color-sunken: var(--color-canvas-100); /* subdued fill, e.g. search bar */
+
+  --color-strong: var(--color-ink-900); /* strongest text */
+  --color-body: var(--color-ink-700); /* body text */
+  --color-muted: var(--color-ink-500); /* muted / secondary text */
+  --color-on-panel: var(--color-canvas-50); /* text sitting on a dark panel */
+
+  --color-accent: var(--color-blue-600);
+  --color-accent-strong: var(--color-navy-800);
+  --color-anchor: var(--color-navy-800);
+  --color-anchor-strong: var(--color-navy-900);
+
+  --color-hairline: var(--color-ink-100);
+  --color-line: var(--color-ink-200);
+  --color-canvas-line: var(--color-canvas-200);
+  --color-focus: var(--color-blue-600);
+
+  /* Radius (unchanged from the base design system — only color tokens
+     were overridden by the client). */
+  --radius-xs: 4px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-pill: 999px;
+}
+
+/*
+ * Spacing (8px base grid) and shell-specific dimensions, kept as plain
+ * custom properties rather than remapped into Tailwind's reserved
+ * `--spacing` scale — Tailwind v4's default spacing unit (4px) already
+ * lands on every one of these values, so utilities like `p-4`/`gap-3`
+ * stay usable and in sync without redefining the scale.
+ */
+:root {
+  --space-0: 0px;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --space-9: 96px;
+  --space-10: 128px;
+
+  --sidebar-width: 236px;
+  --header-height: 64px;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-body);
+  color: var(--color-body);
+  background: var(--color-canvas);
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#root {
+  height: 100%;
+}
+
+/* Only <main> scrolls; the shell itself never introduces horizontal scroll. */
+html,
+body,
+#root {
+  overflow-x: hidden;
+}
