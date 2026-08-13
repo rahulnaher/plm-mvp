@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import Hub from '../src/screens/Hub';
+import { AlertsList } from '../src/components/data-display/AlertsList';
 
 function renderHub() {
   return render(<Hub />);
@@ -136,5 +137,92 @@ describe('Hub', () => {
     await user.click(screen.getByRole('checkbox', { name: 'APAC' }));
 
     expect(screen.getByRole('button', { name: 'Apply' })).toBeDisabled();
+  });
+
+  it('Alerts List default load shows all 4 alerts', () => {
+    renderHub();
+
+    expect(screen.getByText('Critical Data Missing')).toBeInTheDocument();
+    expect(screen.getByText('Stale Workflows')).toBeInTheDocument();
+    expect(screen.getByText('Sync Delay')).toBeInTheDocument();
+    expect(screen.getByText('System Notification')).toBeInTheDocument();
+  });
+
+  it('toggling a Segment checkbox without Apply leaves the Alerts List unchanged', async () => {
+    const user = userEvent.setup();
+    renderHub();
+
+    await user.click(screen.getByRole('button', { name: /Segment \(3\)/ }));
+    await user.click(screen.getByRole('checkbox', { name: 'Snacking' }));
+
+    // Pending edit only, never Applied -- all 4 alerts still show, including Snacking's.
+    expect(screen.getByText('Critical Data Missing')).toBeInTheDocument();
+    expect(screen.getByText('Stale Workflows')).toBeInTheDocument();
+    expect(screen.getByText('Sync Delay')).toBeInTheDocument();
+    expect(screen.getByText('System Notification')).toBeInTheDocument();
+  });
+
+  it('Segment Apply narrows the Alerts List to the applied segment only', async () => {
+    const user = userEvent.setup();
+    renderHub();
+
+    await user.click(screen.getByRole('button', { name: /Segment \(3\)/ }));
+    await user.click(screen.getByRole('checkbox', { name: 'Snacking' }));
+    await user.click(screen.getByRole('checkbox', { name: 'Food' }));
+    await user.click(screen.getByRole('button', { name: 'Apply' }));
+
+    // Only Petcare's alerts (a1, a4) remain.
+    expect(screen.getByText('Critical Data Missing')).toBeInTheDocument();
+    expect(screen.getByText('System Notification')).toBeInTheDocument();
+    expect(screen.queryByText('Stale Workflows')).not.toBeInTheDocument();
+    expect(screen.queryByText('Sync Delay')).not.toBeInTheDocument();
+  });
+
+  it('Region-only Apply leaves the Alerts List unchanged (never filters by Region)', async () => {
+    const user = userEvent.setup();
+    renderHub();
+
+    await user.click(screen.getByRole('button', { name: /Region \(3\)/ }));
+    await user.click(screen.getByRole('checkbox', { name: 'NA' }));
+    await user.click(screen.getByRole('button', { name: 'Apply' }));
+
+    expect(screen.getByRole('button', { name: /Region \(2\)/ })).toBeInTheDocument();
+    expect(screen.getByText('Critical Data Missing')).toBeInTheDocument();
+    expect(screen.getByText('Stale Workflows')).toBeInTheDocument();
+    expect(screen.getByText('Sync Delay')).toBeInTheDocument();
+    expect(screen.getByText('System Notification')).toBeInTheDocument();
+  });
+
+  it('AlertsList renders an empty state without crashing when given zero alerts', () => {
+    render(<AlertsList alerts={[]} />);
+
+    expect(screen.getByText(/no alerts/i)).toBeInTheDocument();
+  });
+
+  it('Portfolio Health Trend renders all 3 segments on default load', () => {
+    renderHub();
+
+    const trend = screen.getByTestId('portfolio-health-trend');
+    expect(trend).toHaveTextContent('Petcare');
+    expect(trend).toHaveTextContent('Snacking');
+    expect(trend).toHaveTextContent('Food');
+  });
+
+  it('regression: Portfolio Health Trend never changes on any Segment and/or Region Apply', async () => {
+    const user = userEvent.setup();
+    renderHub();
+
+    const before = screen.getByTestId('portfolio-health-trend').innerHTML;
+
+    await user.click(screen.getByRole('button', { name: /Segment \(3\)/ }));
+    await user.click(screen.getByRole('checkbox', { name: 'Petcare' }));
+    await user.click(screen.getByRole('button', { name: 'Apply' }));
+
+    await user.click(screen.getByRole('button', { name: /Region \(3\)/ }));
+    await user.click(screen.getByRole('checkbox', { name: 'NA' }));
+    await user.click(screen.getByRole('button', { name: 'Apply' }));
+
+    const after = screen.getByTestId('portfolio-health-trend').innerHTML;
+    expect(after).toEqual(before);
   });
 });

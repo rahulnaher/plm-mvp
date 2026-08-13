@@ -1,5 +1,7 @@
 import { useMemo, useState } from 'react';
+import type { Alert } from '../../data/hubAlerts';
 import { REGIONS, SEGMENTS, type Region, type Segment } from '../../data/hubKpiAggregate';
+import { computeHubAlerts } from '../../logic/computeHubAlerts';
 import { computeHubKpis, type HubKpis } from '../../logic/computeHubKpis';
 
 export type PanelKey = 'segment' | 'region';
@@ -21,6 +23,8 @@ export interface UseHubFiltersResult {
   segment: HubFilterPanel<Segment>;
   region: HubFilterPanel<Region>;
   kpis: HubKpis;
+  /** Filtered strictly by applied Segment -- never Region (see `computeHubAlerts`). */
+  alerts: Alert[];
 }
 
 /**
@@ -32,7 +36,11 @@ export interface UseHubFiltersResult {
  * applied/pending selection (both default all-selected). A single
  * `openPanel` field enforces "only one dropdown open at a time" without
  * coupling the panels' selection state together. KPIs are derived from
- * applied selections only, via the pure `computeHubKpis`.
+ * applied selections only, via the pure `computeHubKpis`; alerts are
+ * derived from applied Segment only (never Region), via the pure
+ * `computeHubAlerts`. Portfolio Health Trend deliberately does NOT derive
+ * from any state here -- `computeSegmentHealth()` is called directly by
+ * the screen, with zero arguments.
  */
 export function useHubFilters(): UseHubFiltersResult {
   const [appliedSegments, setAppliedSegments] = useState<Set<Segment>>(() => new Set(SEGMENTS));
@@ -94,5 +102,7 @@ export function useHubFilters(): UseHubFiltersResult {
     [appliedSegments, appliedRegions],
   );
 
-  return { segment, region, kpis };
+  const alerts = useMemo(() => computeHubAlerts(appliedSegments), [appliedSegments]);
+
+  return { segment, region, kpis, alerts };
 }

@@ -1,16 +1,21 @@
+import { AlertsList } from '../../components/data-display/AlertsList';
 import { KpiCard } from '../../components/data-display/KpiCard';
+import { PortfolioHealthTrend } from '../../components/data-display/PortfolioHealthTrend';
 import { FilterDropdown } from '../../components/filters/FilterDropdown';
+import { computeSegmentHealth } from '../../logic/computeSegmentHealth';
 import { useHubFilters } from './useHubFilters';
 
 /**
  * PLM Hub: independent Segment/Region filter panels (each strictly gated
- * behind its own Apply/Cancel) driving a 3-card KPI strip. KPI values are
- * illustrative aggregates (`src/data/hubKpiAggregate.ts`), not the Explorer
- * catalog -- the Portfolio Health Trend chart and Alerts List are out of
- * scope here (Story 1.3).
+ * behind its own Apply/Cancel) driving a KPI strip and an Alerts List. KPI
+ * and alert values are illustrative aggregates (`src/data/hubKpiAggregate.ts`
+ * / `src/data/hubAlerts.ts`), not the Explorer catalog. Portfolio Health
+ * Trend is composed via `computeSegmentHealth()` called directly here (zero
+ * arguments, never from `useHubFilters` state) so it is structurally
+ * incapable of reacting to any filter.
  */
 export default function Hub() {
-  const { segment, region, kpis } = useHubFilters();
+  const { segment, region, kpis, alerts } = useHubFilters();
 
   return (
     <div>
@@ -57,6 +62,11 @@ export default function Hub() {
           label="Phased Out"
           valueColor="var(--color-muted)"
         />
+      </div>
+
+      <div className="mt-4.5 flex flex-wrap items-stretch gap-4">
+        <AlertsList alerts={alerts} />
+        <PortfolioHealthTrend data={computeSegmentHealth()} />
       </div>
     </div>
   );

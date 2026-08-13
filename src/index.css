@@ -70,6 +70,21 @@
   --color-canvas-line: var(--color-canvas-200);
   --color-focus: var(--color-blue-600);
 
+  /*
+   * Alert severity tokens (Story 1.3 -- Alerts List). Only 3 new pairs
+   * (bg+fg), no unrelated additions. Critical/warning hex values are ported
+   * directly from the reference design's `alertMeta` map (its `--red-50` /
+   * `--red-800` / `--yellow-100` tokens, which this project's palette has
+   * no equivalent of); info reuses the existing `--color-teal-100` token
+   * above rather than introducing a duplicate.
+   */
+  --color-critical-bg: #fdf1f0; /* reference --red-50 */
+  --color-critical-fg: #a80404; /* reference --red-800 */
+  --color-warning-bg: #fff4cc; /* reference --yellow-100 */
+  --color-warning-fg: #7a5e00;
+  --color-info-bg: var(--color-teal-100);
+  --color-info-fg: #0a6657;
+
   /* Radius (unchanged from the base design system — only color tokens
      were overridden by the client). */
   --radius-xs: 4px;
