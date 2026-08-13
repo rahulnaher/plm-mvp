@@ -155,3 +155,16 @@ export interface Relationship {
   kind: RelationshipKind;
   label: string;
 }
+
+/** The 4 flat entity arrays `explodeBom` (Story 3.1) traverses via FK
+ * joins -- `Material` -> `MaterialBomLink` -> `BomHeader` -> `BomItem` ->
+ * child `Material`. Types only -- bundles the seed catalog
+ * (`data/seed/index.ts`) and the held-out synthetic fixture
+ * (`test/fixtures/synthetic-chain.ts`) under one shape so `explodeBom`
+ * takes either without a per-source branch. */
+export interface Catalog {
+  materials: Material[];
+  materialBomLinks: MaterialBomLink[];
+  bomHeaders: BomHeader[];
+  bomItems: BomItem[];
+}
