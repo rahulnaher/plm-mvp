@@ -1,8 +1,11 @@
 import { AlertsList } from '../../components/data-display/AlertsList';
 import { KpiCard } from '../../components/data-display/KpiCard';
 import { PortfolioHealthTrend } from '../../components/data-display/PortfolioHealthTrend';
+import { ReportTiles } from '../../components/data-display/ReportTiles';
+import { RecentViewsTable } from '../../components/data-display/RecentViewsTable';
 import { FilterDropdown } from '../../components/filters/FilterDropdown';
 import { computeSegmentHealth } from '../../logic/computeSegmentHealth';
+import { computeRecentViews } from '../../logic/computeRecentViews';
 import { useHubFilters } from './useHubFilters';
 
 /**
@@ -12,7 +15,9 @@ import { useHubFilters } from './useHubFilters';
  * / `src/data/hubAlerts.ts`), not the Explorer catalog. Portfolio Health
  * Trend is composed via `computeSegmentHealth()` called directly here (zero
  * arguments, never from `useHubFilters` state) so it is structurally
- * incapable of reacting to any filter.
+ * incapable of reacting to any filter. Report Tiles and the Recent Views
+ * table are likewise static/local -- `computeRecentViews()` is called
+ * directly here (zero arguments), never via `useHubFilters`.
  */
 export default function Hub() {
   const { segment, region, kpis, alerts } = useHubFilters();
@@ -68,6 +73,10 @@ export default function Hub() {
         <AlertsList alerts={alerts} />
         <PortfolioHealthTrend data={computeSegmentHealth()} />
       </div>
+
+      <ReportTiles />
+
+      <RecentViewsTable views={computeRecentViews()} />
     </div>
   );
 }

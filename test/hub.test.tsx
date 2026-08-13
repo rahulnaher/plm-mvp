@@ -1,11 +1,16 @@
 import { describe, expect, it } from 'vitest';
-import { render, screen } from '@testing-library/react';
+import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter } from 'react-router-dom';
 import Hub from '../src/screens/Hub';
 import { AlertsList } from '../src/components/data-display/AlertsList';
 
 function renderHub() {
-  return render(<Hub />);
+  return render(
+    <MemoryRouter>
+      <Hub />
+    </MemoryRouter>,
+  );
 }
 
 describe('Hub', () => {
@@ -18,7 +23,9 @@ describe('Hub', () => {
     expect(screen.getByText('2,239')).toBeInTheDocument();
     expect(screen.getByText('383')).toBeInTheDocument();
     expect(screen.getByText('Total Specs')).toBeInTheDocument();
-    expect(screen.getByText('Active')).toBeInTheDocument();
+    // The KPI card's own "Active" label -- disambiguated from the Recent
+    // Views table's "Active" status badges (same text) via its unique class.
+    expect(screen.getByText('Active', { selector: '.font-label' })).toBeInTheDocument();
     expect(screen.getByText('Phased Out')).toBeInTheDocument();
   });
 
@@ -224,5 +231,86 @@ describe('Hub', () => {
 
     const after = screen.getByTestId('portfolio-health-trend').innerHTML;
     expect(after).toEqual(before);
+  });
+
+  it('renders exactly 4 Report Tiles linking to the Explorer/Traceability/Impact/Compare routes', () => {
+    renderHub();
+
+    const tiles = screen.getByTestId('report-tiles');
+    const expected = [
+      ['Specification Explorer', '/explorer'],
+      ['Top-Down Traceability', '/traceability'],
+      ['Bottom-Up Impact', '/impact'],
+      ['Compare Specs', '/compare'],
+    ] as const;
+
+    for (const [name, href] of expected) {
+      expect(within(tiles).getByRole('link', { name })).toHaveAttribute('href', href);
+    }
+
+    // Exactly 4 -- no 5th tile, scoped to the tiles container itself.
+    expect(within(tiles).getAllByRole('link')).toHaveLength(4);
+  });
+
+  it('highlights the Traceability tile with the dark navy background, leaving the other 3 uniform', () => {
+    renderHub();
+
+    const tiles = screen.getByTestId('report-tiles');
+    const traceabilityTile = within(tiles).getByRole('link', { name: 'Top-Down Traceability' });
+    expect(traceabilityTile.className).toContain('bg-navy-800');
+
+    for (const name of ['Specification Explorer', 'Bottom-Up Impact', 'Compare Specs']) {
+      const tile = within(tiles).getByRole('link', { name });
+      expect(tile.className).not.toContain('bg-navy-800');
+      expect(tile.className).toContain('bg-surface');
+    }
+  });
+
+  it('renders the Recent Views table with 4 inert rows (no functional href on labels or "View Full Portfolio")', () => {
+    renderHub();
+
+    const table = screen.getByTestId('recent-views-table');
+
+    expect(screen.getByText('My Pinned & Recent Views')).toBeInTheDocument();
+    expect(screen.getByText('GBL-FG-PED-15K-US — Pedigree Adult Dry (15kg)')).toBeInTheDocument();
+    expect(screen.getByText('GBL-FG-MMS-US — M&M’s Sharing Pouch (US vs EU)')).toBeInTheDocument();
+    expect(screen.getByText('GBL-ING-WHEAT-WHL-01 — Whole Grain Wheat')).toBeInTheDocument();
+    expect(screen.getByText('GBL-FG-BOR-AP — Ben’s Original Express Rice (APAC)')).toBeInTheDocument();
+
+    // header + 4 data rows, scoped to this table (no other table exists on Hub).
+    expect(within(table).getAllByRole('row')).toHaveLength(5);
+
+    // 3 rows are 'Active', 1 ('Ben's Original Express Rice', r4) is 'Draft'.
+    expect(within(table).getAllByText('Active')).toHaveLength(3);
+    expect(within(table).getAllByText('Draft')).toHaveLength(1);
+
+    const viewFullPortfolio = screen.getByText('View Full Portfolio');
+    expect(viewFullPortfolio.tagName).not.toBe('A');
+    expect(viewFullPortfolio).not.toHaveAttribute('href');
+
+    const label = screen.getByText('GBL-FG-PED-15K-US — Pedigree Adult Dry (15kg)');
+    expect(label.tagName).not.toBe('A');
+    expect(label).not.toHaveAttribute('href');
+
+    expect(screen.queryAllByRole('link', { name: /GBL-/ })).toHaveLength(0);
+  });
+
+  it('regression: Report Tiles and the Recent Views table never change on any Segment and/or Region Apply', async () => {
+    const user = userEvent.setup();
+    renderHub();
+
+    const tilesBefore = screen.getByTestId('report-tiles').innerHTML;
+    const recentViewsBefore = screen.getByTestId('recent-views-table').innerHTML;
+
+    await user.click(screen.getByRole('button', { name: /Segment \(3\)/ }));
+    await user.click(screen.getByRole('checkbox', { name: 'Petcare' }));
+    await user.click(screen.getByRole('button', { name: 'Apply' }));
+
+    await user.click(screen.getByRole('button', { name: /Region \(3\)/ }));
+    await user.click(screen.getByRole('checkbox', { name: 'NA' }));
+    await user.click(screen.getByRole('button', { name: 'Apply' }));
+
+    expect(screen.getByTestId('report-tiles').innerHTML).toEqual(tilesBefore);
+    expect(screen.getByTestId('recent-views-table').innerHTML).toEqual(recentViewsBefore);
   });
 });
