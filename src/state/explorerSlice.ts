@@ -67,9 +67,14 @@ export interface ExplorerSlice {
    * single "Execute Query" gate. */
   executeQuery: () => void;
   toggleRowSelection: (materialId: MaterialId) => void;
+  /** Idempotent add for the ⋮ menu's "Add to Compare" action (Story 2.4,
+   * FR-10) -- deliberately separate from `toggleRowSelection` so clicking
+   * it on an already-checked row never deselects it (the row checkbox is
+   * the only writer allowed to remove a row from this set). */
+  addRowToSelection: (materialId: MaterialId) => void;
 }
 
-export const createExplorerSlice: StateCreator<ExplorerSlice> = (set) => ({
+export const createExplorerSlice: StateCreator<ExplorerSlice> = (set, get) => ({
   pendingFilters: createDefaultFilters(),
   appliedFilters: createDefaultFilters(),
   selectedMaterialIds: new Set(),
@@ -124,6 +129,15 @@ export const createExplorerSlice: StateCreator<ExplorerSlice> = (set) => ({
     set((state) => ({
       selectedMaterialIds: toggleInSet(state.selectedMaterialIds, materialId),
     })),
+
+  addRowToSelection: (materialId) => {
+    // True no-op when already selected -- skip `set` entirely so this
+    // never replaces the store's state object / notifies subscribers for
+    // a call that changes nothing (unlike `toggleRowSelection`, which
+    // always legitimately changes the set).
+    if (get().selectedMaterialIds.has(materialId)) return;
+    set((state) => ({ selectedMaterialIds: new Set(state.selectedMaterialIds).add(materialId) }));
+  },
 });
 
 /** Exposed for `test/screens/explorer.test.tsx` to reset store state

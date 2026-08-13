@@ -1,10 +1,13 @@
 import { useMemo, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { MATERIAL_TYPES, REGIONS, SEGMENTS, type Material } from '../../data/catalog';
 import { BOM_ITEMS, MATERIALS } from '../../data/seed';
 import { QueryFilterDropdown } from '../../components/filters/QueryFilterDropdown';
 import { ResultsTable, STATUS_GROUPS } from '../../components/data-display/ResultsTable';
+import { CompareSelectedCta } from '../../components/data-display/CompareSelectedCta';
 import { useAppStore } from '../../state/store';
 import type { ExplorerFilters } from '../../state/explorerSlice';
+import type { MaterialId } from '../../logic/types';
 
 /** Applied-filter predicate: every dimension must match (AND across
  * dimensions), free text matches substring case-insensitive against
@@ -32,6 +35,12 @@ function matchesFilters(material: Material, filters: ExplorerFilters): boolean {
  * clicked per FR-8) over a sortable `ResultsTable` rendering `MATERIALS`.
  * All query/selection state lives in `explorerSlice` (AD-5) -- this screen
  * only reads it and computes the applied-filtered row set.
+ *
+ * Story 2.4 adds the ⋮ row-action menu's two navigating actions (writing
+ * `drillTargetSlice` then routing to the Epic 3/4 placeholder screens) and
+ * the floating "Compare Selected" CTA -- routing here is render-selection
+ * -only per AD-5 (`useNavigate` fires side effects, no state is ever read
+ * back from the URL).
  */
 export default function Explorer() {
   const pendingFilters = useAppStore((s) => s.pendingFilters);
@@ -44,8 +53,25 @@ export default function Explorer() {
   const togglePendingStatus = useAppStore((s) => s.togglePendingStatus);
   const executeQuery = useAppStore((s) => s.executeQuery);
   const toggleRowSelection = useAppStore((s) => s.toggleRowSelection);
+  const addRowToSelection = useAppStore((s) => s.addRowToSelection);
+  const setDrillTarget = useAppStore((s) => s.setDrillTarget);
 
+  const navigate = useNavigate();
   const openPanel = usePanelState();
+
+  function handleExplodeBom(materialId: MaterialId) {
+    setDrillTarget({ materialId, source: 'explode-bom' });
+    navigate('/traceability');
+  }
+
+  function handleAnalyzeBlastRadius(materialId: MaterialId) {
+    setDrillTarget({ materialId, source: 'analyze-blast-radius' });
+    navigate('/impact');
+  }
+
+  function handleCompareSelected() {
+    navigate('/compare');
+  }
 
   const visibleMaterials = useMemo(
     () => MATERIALS.filter((material) => matchesFilters(material, appliedFilters)),
@@ -125,7 +151,17 @@ export default function Explorer() {
         bomItems={BOM_ITEMS}
         selectedMaterialIds={selectedMaterialIds}
         onToggleRowSelection={toggleRowSelection}
+        onExplodeBom={handleExplodeBom}
+        onAnalyzeBlastRadius={handleAnalyzeBlastRadius}
+        onAddToCompare={addRowToSelection}
       />
+
+      {selectedMaterialIds.size >= 2 && (
+        <CompareSelectedCta
+          selectedCount={selectedMaterialIds.size}
+          onCompareSelected={handleCompareSelected}
+        />
+      )}
     </div>
   );
 }

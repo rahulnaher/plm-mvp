@@ -41,6 +41,20 @@ export type HeroRoot = MaterialId;
  * -alias rationale as `HeroRoot`. */
 export type CatalogBreadthItem = MaterialId;
 
+/** The 3 origins that can write a `DrillTarget` (AD-5). `'explore-row'` is
+ * NOT a member -- the exact string is `'explorer-row'`, reserved for a
+ * future row-click/detail-panel story with no writer yet in this codebase.
+ * `'explode-bom'`/`'analyze-blast-radius'` are the two writers Story 2.4's
+ * ⋮ row-action menu uses. */
+export const DRILL_TARGET_SOURCES = ['explorer-row', 'explode-bom', 'analyze-blast-radius'] as const;
+export type DrillTargetSource = (typeof DRILL_TARGET_SOURCES)[number];
+
+/** AD-5's pinned cross-screen drill-target shape: which material to open,
+ * and which row action navigated there, so Epic 3/4 destination screens
+ * can tailor their view without re-deriving the origin. `null` is the
+ * default/no-target state -- never a partial `{ materialId }` alone. */
+export type DrillTarget = { materialId: MaterialId; source: DrillTargetSource } | null;
+
 /** Linked-relationship discriminator (AD-6): a Document Info Record, or a
  * Transport Spec / Pallet Instruction. `Relationship` (`data/catalog.ts`)
  * is one entity keyed on this, never two hardcoded structures. */

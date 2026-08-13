@@ -1,8 +1,17 @@
 import { type AriaAttributes, type ReactNode, useState } from 'react';
 import type { BomItem, Material, MaterialStatus, MaterialType } from '../../data/catalog';
 import type { MaterialId } from '../../logic/types';
+import { RowActionMenu } from './RowActionMenu';
 
-export interface ResultsTableProps {
+/** The 3 row-action callbacks `buildColumns`'s Actions column wires into
+ * each row's `RowActionMenu` (Story 2.4). */
+export interface ResultsTableRowActions {
+  onExplodeBom: (materialId: MaterialId) => void;
+  onAnalyzeBlastRadius: (materialId: MaterialId) => void;
+  onAddToCompare: (materialId: MaterialId) => void;
+}
+
+export interface ResultsTableProps extends ResultsTableRowActions {
   /** Already applied-filtered rows (Explorer/index.tsx computes this from
    * `appliedFilters` -- this component only sorts and renders). */
   materials: Material[];
@@ -101,7 +110,14 @@ function badge(text: string, meta: { bg: string; fg: string }): ReactNode {
   );
 }
 
-function buildColumns(bomItems: BomItem[]): Column[] {
+/**
+ * The explicit column array (Boundaries: the extension point for Story
+ * 2.4's ⋮ row-action menu, never a hardcoded `<td>` in the row map) --
+ * appends a non-sortable "Actions" column rendering `RowActionMenu` for
+ * each row, wired to the 3 callbacks the caller (`Explorer/index.tsx`)
+ * owns.
+ */
+function buildColumns(bomItems: BomItem[], actions: ResultsTableRowActions): Column[] {
   return [
     {
       key: 'materialId',
@@ -159,6 +175,19 @@ function buildColumns(bomItems: BomItem[]): Column[] {
       getSortValue: (m) => getFormulationPct(m, bomItems),
       render: (m) => formatMissing(getFormulationPct(m, bomItems), (v) => `${v}%`),
     },
+    {
+      key: 'actions',
+      header: 'Actions',
+      sortable: false,
+      render: (m) => (
+        <RowActionMenu
+          materialId={m.materialId}
+          onExplodeBom={actions.onExplodeBom}
+          onAnalyzeBlastRadius={actions.onAnalyzeBlastRadius}
+          onAddToCompare={actions.onAddToCompare}
+        />
+      ),
+    },
   ];
 }
 
@@ -177,16 +206,25 @@ function compareValues(a: SortValue, b: SortValue, direction: SortDirection): nu
 /**
  * Sortable Results Table over the applied-filtered `materials` (Story
  * 2.3). Columns are an explicit `{key,header,render}[]` array, not
- * hardcoded `<td>`s, so Story 2.4 can prepend/append columns (e.g. the ⋮
- * row-action menu) without a rewrite. Sort order is local component state
- * (Boundaries: not a cross-screen concern, unlike the filters themselves).
- * Every row carries `data-material-id` (Story 2.4's row-action menu
- * attaches to it later). Reuses `RecentViewsTable.tsx:7-10,63-68`'s
- * status-badge/card-wrapper convention for the Type/Status badges.
+ * hardcoded `<td>`s, which is what let Story 2.4 append the ⋮ row-action
+ * menu as an "Actions" column without a rewrite. Sort order is local
+ * component state (Boundaries: not a cross-screen concern, unlike the
+ * filters themselves). Every row carries `data-material-id`, which Story
+ * 2.4's row-action menu now attaches to via its column's `render`.
+ * Reuses `RecentViewsTable.tsx:7-10,63-68`'s status-badge/card-wrapper
+ * convention for the Type/Status badges.
  */
-export function ResultsTable({ materials, bomItems, selectedMaterialIds, onToggleRowSelection }: ResultsTableProps) {
+export function ResultsTable({
+  materials,
+  bomItems,
+  selectedMaterialIds,
+  onToggleRowSelection,
+  onExplodeBom,
+  onAnalyzeBlastRadius,
+  onAddToCompare,
+}: ResultsTableProps) {
   const [sort, setSort] = useState<{ key: string; direction: SortDirection } | null>(null);
-  const columns = buildColumns(bomItems);
+  const columns = buildColumns(bomItems, { onExplodeBom, onAnalyzeBlastRadius, onAddToCompare });
 
   function handleHeaderClick(column: Column) {
     if (!column.sortable) return;

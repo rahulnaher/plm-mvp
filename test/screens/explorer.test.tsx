@@ -1,14 +1,36 @@
 import { beforeEach, describe, expect, it } from 'vitest';
 import { render, screen, within } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { MemoryRouter, useLocation } from 'react-router-dom';
 import Explorer from '../../src/screens/Explorer';
 import { useAppStore } from '../../src/state/store';
 import { createDefaultExplorerFilters } from '../../src/state/explorerSlice';
 import { STATUS_GROUPS } from '../../src/components/data-display/ResultsTable';
 import { MATERIAL_STATUSES } from '../../src/data/catalog';
 
+/** Renders the current router pathname so tests can assert `useNavigate`
+ * calls without needing a real `<Routes>` table (Explorer itself is
+ * unconditionally rendered, not route-matched, matching `hub.test.tsx`'s
+ * plain `MemoryRouter` precedent). */
+function LocationDisplay() {
+  const location = useLocation();
+  return <div data-testid="location-display">{location.pathname}</div>;
+}
+
 function renderExplorer() {
-  return render(<Explorer />);
+  return render(
+    <MemoryRouter>
+      <Explorer />
+      <LocationDisplay />
+    </MemoryRouter>,
+  );
+}
+
+/** Opens `materialId`'s ⋮ row-action menu and clicks the named action. */
+async function clickRowAction(user: ReturnType<typeof userEvent.setup>, materialId: string, actionName: string) {
+  const row = document.querySelector(`[data-material-id="${materialId}"]`) as HTMLElement;
+  await user.click(within(row).getByRole('button', { name: `Actions for ${materialId}` }));
+  await user.click(screen.getByRole('menuitem', { name: actionName }));
 }
 
 function resultsTable() {
@@ -25,6 +47,7 @@ beforeEach(() => {
     pendingFilters: createDefaultExplorerFilters(),
     appliedFilters: createDefaultExplorerFilters(),
     selectedMaterialIds: new Set(),
+    drillTarget: null,
   });
 });
 
@@ -176,6 +199,119 @@ describe('Explorer', () => {
     expect(document.querySelector('[data-material-id="GBL-FG-PED-15K-US"]')).not.toBeInTheDocument();
     // ...but selection is intentionally independent of the current filtered view.
     expect(useAppStore.getState().selectedMaterialIds.has('GBL-FG-PED-15K-US')).toBe(true);
+  });
+
+  it('⋮ row-action menu shows exactly 3 actions, in order: Explode BOM, Analyze Blast Radius, Add to Compare', async () => {
+    const user = userEvent.setup();
+    renderExplorer();
+
+    const row = document.querySelector('[data-material-id="GBL-FG-PED-15K-US"]') as HTMLElement;
+    await user.click(within(row).getByRole('button', { name: 'Actions for GBL-FG-PED-15K-US' }));
+
+    const items = screen.getAllByRole('menuitem');
+    expect(items.map((item) => item.textContent)).toEqual([
+      'Explode BOM',
+      'Analyze Blast Radius',
+      'Add to Compare',
+    ]);
+  });
+
+  it('Explode BOM writes drillTargetSlice and navigates to /traceability', async () => {
+    const user = userEvent.setup();
+    renderExplorer();
+
+    await clickRowAction(user, 'GBL-FG-PED-15K-US', 'Explode BOM');
+
+    expect(useAppStore.getState().drillTarget).toEqual({
+      materialId: 'GBL-FG-PED-15K-US',
+      source: 'explode-bom',
+    });
+    expect(screen.getByTestId('location-display')).toHaveTextContent('/traceability');
+  });
+
+  it('Analyze Blast Radius writes drillTargetSlice and navigates to /impact', async () => {
+    const user = userEvent.setup();
+    renderExplorer();
+
+    const materials = document.querySelectorAll('[data-material-id]');
+    const secondMaterialId = materials[1].getAttribute('data-material-id') as string;
+
+    await clickRowAction(user, secondMaterialId, 'Analyze Blast Radius');
+
+    expect(useAppStore.getState().drillTarget).toEqual({
+      materialId: secondMaterialId,
+      source: 'analyze-blast-radius',
+    });
+    expect(screen.getByTestId('location-display')).toHaveTextContent('/impact');
+  });
+
+  it('Add to Compare on an already-checked row is idempotent: selection unchanged, no navigation, drillTarget untouched', async () => {
+    const user = userEvent.setup();
+    renderExplorer();
+
+    await user.click(screen.getByRole('checkbox', { name: 'Select GBL-FG-PED-15K-US' }));
+    expect(useAppStore.getState().selectedMaterialIds.has('GBL-FG-PED-15K-US')).toBe(true);
+
+    await clickRowAction(user, 'GBL-FG-PED-15K-US', 'Add to Compare');
+
+    expect(useAppStore.getState().selectedMaterialIds.has('GBL-FG-PED-15K-US')).toBe(true);
+    expect(useAppStore.getState().selectedMaterialIds.size).toBe(1);
+    expect(useAppStore.getState().drillTarget).toBeNull();
+    // Exact match -- `toHaveTextContent('/')` is a substring match that
+    // would also pass for an incorrect navigation to /traceability or
+    // /impact (both contain "/"), so it wouldn't actually prove no
+    // navigation happened.
+    expect(screen.getByTestId('location-display').textContent).toBe('/');
+  });
+
+  it('Add to Compare on an unchecked row adds it to selectedMaterialIds', async () => {
+    const user = userEvent.setup();
+    renderExplorer();
+
+    await clickRowAction(user, 'GBL-FG-PED-15K-US', 'Add to Compare');
+
+    expect(useAppStore.getState().selectedMaterialIds.has('GBL-FG-PED-15K-US')).toBe(true);
+  });
+
+  it('floating Compare Selected CTA mounts exactly when selectedMaterialIds.size crosses 2, and unmounts back below 2', async () => {
+    const user = userEvent.setup();
+    renderExplorer();
+
+    const materials = document.querySelectorAll('[data-material-id]');
+    const [firstId, secondId] = Array.from(materials).map((el) => el.getAttribute('data-material-id') as string);
+
+    expect(screen.queryByRole('button', { name: /Compare Selected/ })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('checkbox', { name: `Select ${firstId}` }));
+    expect(screen.queryByRole('button', { name: /Compare Selected/ })).not.toBeInTheDocument();
+
+    await user.click(screen.getByRole('checkbox', { name: `Select ${secondId}` }));
+    expect(screen.getByRole('button', { name: 'Compare Selected (2)' })).toBeInTheDocument();
+
+    await user.click(screen.getByRole('checkbox', { name: `Select ${secondId}` }));
+    expect(screen.queryByRole('button', { name: /Compare Selected/ })).not.toBeInTheDocument();
+  });
+
+  it('clicking the Compare Selected CTA navigates to /compare without altering selectedMaterialIds', async () => {
+    const user = userEvent.setup();
+    renderExplorer();
+
+    const materials = document.querySelectorAll('[data-material-id]');
+    const ids = Array.from(materials)
+      .slice(0, 3)
+      .map((el) => el.getAttribute('data-material-id') as string);
+
+    for (const id of ids) {
+      await user.click(screen.getByRole('checkbox', { name: `Select ${id}` }));
+    }
+
+    await user.click(screen.getByRole('button', { name: 'Compare Selected (3)' }));
+
+    expect(screen.getByTestId('location-display')).toHaveTextContent('/compare');
+    expect(useAppStore.getState().selectedMaterialIds.size).toBe(3);
+    for (const id of ids) {
+      expect(useAppStore.getState().selectedMaterialIds.has(id)).toBe(true);
+    }
   });
 });
 
