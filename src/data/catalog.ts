@@ -25,13 +25,42 @@ export type Segment = (typeof SEGMENTS)[number];
 export const REGIONS = ['NA', 'EU', 'APAC', 'Global'] as const;
 export type Region = (typeof REGIONS)[number];
 
-/** Loose union of values seen in `Spec Data.xlsx`'s Approval/Lifecycle
- * Status columns. Story 2.2 tightens this later. */
+/** Union of the distinct status-shaped strings observed across `Spec
+ * Data.xlsx`'s 5 sheets, re-verified directly against the raw workbook
+ * (not addendum.md §C's digest, which silently dropped Recipe Specs' and
+ * Ingredient Specs' own status columns and abbreviated one Finished
+ * Goods value) per Story 2.2's post-review correction pass.
+ * `Approved (Active)` / `Pending Harmonization` / `Draft` come from
+ * Packaging Specs' Approval Status column; `Synced` / `Out of Sync (Size
+ * Mismatch)` / `Out of Sync (Trait Missing)` come from Printing Specs'
+ * Inheritance Sync Status column; `Pending Regulatory` is Printing Specs'
+ * own Approval / Regulatory Status column, for the APAC Pedigree print
+ * row (`PSPEC-AP-8820`); `Active (In Production)` is Finished Goods
+ * Specs' Compliance & Launch Status for 5 of its 6 rows (Pedigree US/EU,
+ * M&M's US, Ben's Original EU, Whiskas); `Pending Release (DIR Missing)`
+ * is that same column's real verbatim value for the Pedigree APAC FG
+ * (`GBL-FG-PED-15K-AP`), named directly in this spec's Boundaries (its
+ * DIR is skipped to match); `Under Review (Formula Drift)` is Recipe
+ * Specs' Approval / Lifecycle Status for `SUB-RCP-VIT-02`
+ * (`SUB-AP-0089`, the APAC vitamin premix); `Warning (Supplier
+ * Phase-Out)` is Ingredient Specs' Approval / Lifecycle Status for
+ * `GBL-ING-ZINC-SULF-01` (Zinc Sulfate Monohydrate); `Phased Out`
+ * carries over from Story 2.1's stub as an already-confirmed real value
+ * not otherwise pinned to a specific row in either the addendum extract
+ * or the raw workbook. */
 export const MATERIAL_STATUSES = [
   'Approved (Active)',
   'Pending Harmonization',
   'Draft',
   'Phased Out',
+  'Pending Release (DIR Missing)',
+  'Synced',
+  'Out of Sync (Size Mismatch)',
+  'Out of Sync (Trait Missing)',
+  'Active (In Production)',
+  'Pending Regulatory',
+  'Under Review (Formula Drift)',
+  'Warning (Supplier Phase-Out)',
 ] as const;
 export type MaterialStatus = (typeof MATERIAL_STATUSES)[number];
 
